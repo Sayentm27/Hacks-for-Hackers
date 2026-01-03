@@ -1,0 +1,9 @@
+python-dotenv
+streamlit
+pymongo
+langchain
+langchain-google-genai
+langchain-mongodb
+langchain-huggingface
+sentence-transformers
+elevenlabs
