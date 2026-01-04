@@ -7,3 +7,4 @@ langchain-mongodb
 langchain-huggingface
 sentence-transformers
 elevenlabs
+PyPDF2
