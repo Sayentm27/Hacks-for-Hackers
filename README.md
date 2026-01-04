@@ -55,7 +55,7 @@ Before starting, make sure you have:
 ```bash
 # Clone the repository
 git clone <your-repo-url>
-cd rag-template
+cd Hacks-for-Hackers
 
 # Create a virtual environment
 python -m venv venv
