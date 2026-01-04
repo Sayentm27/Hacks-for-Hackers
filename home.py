@@ -1,25 +1,71 @@
 import streamlit as st
 import backend as rag
 
-st.title("Recommendation System with RAG Pipeline")
-st.subheader("Add a subheader with more explanation if you want")
+st.title("🧠 Personal Knowledge Assistant")
+st.subheader("Your AI-powered second brain - store, search, and retrieve information instantly")
 st.divider()
 
-# Create a sidebar
-# Upload in here the context that goes into MongoDB (Knowledge base)
+# Create a sidebar for uploading knowledge base content
 with st.sidebar:
-    st.header("Upload context")
-    user_text = st.text_area("Enter knowledge here", height=150)
+    st.header("📚 Add to Knowledge Base")
+    
+    # Tabs for different upload methods
+    upload_tab1, upload_tab2 = st.tabs(["📄 Upload PDF", "✍️ Enter Text"])
+    
+    with upload_tab1:
+        uploaded_file = st.file_uploader("Upload a PDF document", type=["pdf"], help="Upload PDFs of notes, articles, research papers, etc.")
+        
+        if uploaded_file is not None:
+            st.info(f"Selected: {uploaded_file.name}")
+            subject_pdf = st.text_input("Subject/Topic (optional)", key="subject_pdf", placeholder="e.g., Machine Learning, History")
+            
+            if st.button("📤 Upload PDF", key="upload_pdf_btn"):
+                with st.spinner("Extracting text from PDF..."):
+                    text_content = rag.extract_text_from_pdf(uploaded_file)
+                    
+                if text_content:
+                    with st.spinner("Adding to knowledge base..."):
+                        metadata = {
+                            "source_type": "pdf",
+                            "filename": uploaded_file.name,
+                            "subject": subject_pdf if subject_pdf else "General"
+                        }
+                        rag.ingest_text(text_content, metadata=metadata)
+                    st.success(f"✅ {uploaded_file.name} added successfully!")
+                else:
+                    st.error("Failed to extract text from PDF")
+    
+    with upload_tab2:
+        user_text = st.text_area("Enter your notes, knowledge, or information", height=150, placeholder="Paste your notes, articles, or any information you want to store...")
+        subject_text = st.text_input("Subject/Topic (optional)", key="subject_text", placeholder="e.g., Python Programming, Biology")
+        
+        if st.button("📤 Add to Knowledge Base", key="upload_text_btn"):
+            if user_text:
+                with st.spinner("Adding to knowledge base..."):
+                    metadata = {
+                        "source_type": "text",
+                        "subject": subject_text if subject_text else "General"
+                    }
+                    rag.ingest_text(user_text, metadata=metadata)
+                st.success("✅ Text added successfully!")
+            else:
+                st.warning("Please enter some text to upload.")
+    
+    st.divider()
+    st.caption("💡 Tip: Add diverse sources for richer insights!")
 
-    if st.button("upload to mongo DB"):
-        if user_text:
-            with st.spinner("Uploading to MongoDB..."):
-                rag.ingest_text(user_text)
-            st.success("Text uploaded successfully!")
-        else:
-            st.warning("Please enter some text to upload.")
+st.header("💬 Ask Questions About Your Knowledge Base")
 
-st.header("Ask anything to the chat from our knowledge base")
+# Add example questions to help users
+with st.expander("💡 Example Questions"):
+    st.markdown("""
+    Try asking:
+    - "Summarize what I learned about quantum physics"
+    - "What are the key points from my machine learning notes?"
+    - "Find information about photosynthesis"
+    - "What did I save about Python decorators?"
+    - "Show me notes related to project management"
+    """)
 
 # Initialize the whole message history
 if "messages" not in st.session_state:
@@ -29,6 +75,12 @@ if "messages" not in st.session_state:
 for idx, message in enumerate(st.session_state.messages):
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
+        
+        # Show sources for assistant messages
+        if message["role"] == "assistant" and "sources" in message:
+            with st.expander("📚 Sources"):
+                for i, doc in enumerate(message["sources"]):
+                    st.markdown(f"**Source {i+1}:** {doc.page_content}")
         
         # Add TTS button for assistant messages
         if message["role"] == "assistant":
@@ -53,11 +105,15 @@ if prompt:
 
         st.markdown(answer)
         
-        # show sourses in an expander
-        with st.expander("Sources"):
+        # show sources in an expander
+        with st.expander("📚 Sources"):
             for i, doc in enumerate(sources):
                 st.markdown(f"**Source {i+1}:** {doc.page_content}")
         
-        # Append the response to the message history and rerun to show the button
-        st.session_state.messages.append({"role": "assistant", "content": answer})
+        # Append the response to the message history with sources and rerun to show the button
+        st.session_state.messages.append({
+            "role": "assistant", 
+            "content": answer,
+            "sources": sources
+        })
         st.rerun()  # Rerun to show the TTS button for the new message
