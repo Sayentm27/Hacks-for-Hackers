@@ -7,6 +7,9 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.documents import Document
 from langchain_core.output_parsers import StrOutputParser
 from elevenlabs.client import ElevenLabs
+import PyPDF2
+from datetime import datetime
+import io
 
 
 # Configuration for MongoDB
@@ -52,19 +55,49 @@ def get_vector_store():
     )
     return vector_store
 
-def ingest_text(text_content):
+def extract_text_from_pdf(pdf_file):
+    """
+    Extract text content from a PDF file.
+    
+    Args:
+        pdf_file: Uploaded PDF file object (from Streamlit file_uploader).
+    
+    Returns:
+        str: Extracted text from all pages of the PDF.
+    """
+    try:
+        pdf_reader = PyPDF2.PdfReader(io.BytesIO(pdf_file.read()))
+        text_content = ""
+        for page in pdf_reader.pages:
+            text_content += page.extract_text() + "\n"
+        return text_content.strip()
+    except Exception as e:
+        st.error(f"Error reading PDF: {str(e)}")
+        return None
+
+def ingest_text(text_content, metadata=None):
     """
     Store text content as vector embeddings in the MongoDB Atlas collection.
     
     Args:
         text_content (str): Text content to be embedded and stored.
+        metadata (dict, optional): Additional metadata to store with the document.
+            Suggested keys: 'subject', 'source_type', 'filename', 'upload_date'
     
     Note:
         Documents are appended to the existing collection. Embedding generation
         is handled automatically by the configured HuggingFace model.
     """
     vector_store = get_vector_store()
-    doc = Document(page_content=text_content)
+    
+    # Create metadata with timestamp if not provided
+    if metadata is None:
+        metadata = {}
+    
+    if 'upload_date' not in metadata:
+        metadata['upload_date'] = datetime.now().isoformat()
+    
+    doc = Document(page_content=text_content, metadata=metadata)
     vector_store.add_documents([doc])
 
 def get_rag_response(query):
