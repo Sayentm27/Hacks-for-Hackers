@@ -80,7 +80,13 @@ for idx, message in enumerate(st.session_state.messages):
         if message["role"] == "assistant" and "sources" in message:
             with st.expander("📚 Sources"):
                 for i, doc in enumerate(message["sources"]):
-                    st.markdown(f"**Source {i+1}:** {doc.page_content}")
+                    # Show preview and full content in nested expander
+                    preview = doc.page_content[:150] + "..." if len(doc.page_content) > 150 else doc.page_content
+                    with st.expander(f"📄 Source {i+1}: {preview}"):
+                        st.markdown(doc.page_content)
+                        # Show metadata if available
+                        if hasattr(doc, 'metadata') and doc.metadata:
+                            st.caption(f"Metadata: {doc.metadata}")
         
         # Add TTS button for assistant messages
         if message["role"] == "assistant":
@@ -108,7 +114,13 @@ if prompt:
         # show sources in an expander
         with st.expander("📚 Sources"):
             for i, doc in enumerate(sources):
-                st.markdown(f"**Source {i+1}:** {doc.page_content}")
+                # Show preview and full content in nested expander
+                preview = doc.page_content[:150] + "..." if len(doc.page_content) > 150 else doc.page_content
+                with st.expander(f"📄 Source {i+1}: {preview}"):
+                    st.markdown(doc.page_content)
+                    # Show metadata if available
+                    if hasattr(doc, 'metadata') and doc.metadata:
+                        st.caption(f"Metadata: {doc.metadata}")
         
         # Append the response to the message history with sources and rerun to show the button
         st.session_state.messages.append({
