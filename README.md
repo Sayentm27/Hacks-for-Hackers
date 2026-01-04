@@ -1,4 +1,4 @@
-# 🧠 Personal Knowledge Assistant
+# 🧠 Personal Knowledge Assistant- The Second Brain
 
 Your AI-powered second brain that helps you store, search, and retrieve information from PDFs, notes, articles, and research papers using advanced Retrieval-Augmented Generation (RAG).
 
